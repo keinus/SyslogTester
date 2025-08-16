@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFC 3164 Syslog Parser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .input-section, .result-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        .server-config {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(149, 165, 166, 0.3);
+        }
+
+        .btn-test {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white;
+        }
+
+        .btn-test:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(230, 126, 34, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .example-messages {
+            margin-bottom: 20px;
+        }
+
+        .example-item {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .example-item:hover {
+            background: #e3f2fd;
+            border-color: #3498db;
+        }
+
+        .result-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .parsed-data {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .data-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+
+        .data-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .data-value {
+            font-weight: 600;
+            color: #2c3e50;
+            word-break: break-all;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3498db;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .test-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .test-section h4 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .test-section p {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .server-config {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .parsed-data {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>RFC 3164 Syslog Parser</h1>
+            <p>Parse and send syslog messages according to RFC 3164 standard</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h2 class="section-title">📝 Message Configuration</h2>
+                
+                <div class="test-section">
+                    <h4>🧪 Test Mode</h4>
+                    <p>로컬 테스트용으로 먼저 "Start Test Server"를 클릭하여 테스트 서버를 실행한 후, "Parse & Send"를 실행하세요.</p>
+                    <button class="btn btn-test" onclick="startTestServer()" id="testBtn">
+                        <span id="testBtnText">Start Test Server (Port 5140)</span>
+                        <span id="testBtnLoader" class="loading hidden"></span>
+                    </button>
+                </div>
+                
+                <div class="example-messages">
+                    <label>Example Messages (클릭하여 사용):</label>
+                    <div class="example-item" onclick="useExample(0)">
+                        &lt;34&gt;Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8
+                    </div>
+                    <div class="example-item" onclick="useExample(1)">
+                        &lt;165&gt;Aug 24 05:34:00 mymachine myproc[10]: %% It's time to make the do-nuts. %%
+                    </div>
+                    <div class="example-item" onclick="useExample(2)">
+                        &lt;0&gt;Oct 22 10:52:01 scapegoat sched[0]: That's All Folks!
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="syslogMessage">Syslog Message (RFC 3164 Format):</label>
+                    <textarea id="syslogMessage" placeholder="<Priority>Timestamp Hostname Tag[PID]: Message"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Target Server Configuration:</label>
+                    <div class="server-config">
+                        <input type="text" id="targetServer" placeholder="Server IP/Hostname" value="127.0.0.1">
+                        <input type="number" id="targetPort" placeholder="Port" value="5140" min="1" max="65535">
+                        <select id="protocol">
+                            <option value="udp">UDP</option>
+                            <option value="tcp">TCP</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="parseAndSend()" id="sendBtn">
+                        <span id="sendBtnText">Parse & Send</span>
+                        <span id="sendBtnLoader" class="loading hidden"></span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="parseOnly()" id="parseBtn">
+                        <span id="parseBtnText">Parse Only</span>
+                        <span id="parseBtnLoader" class="loading hidden"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <h2 class="section-title">📊 Results</h2>
+                
+                <div id="statusContainer" class="hidden">
+                    <div id="statusMessage" class="status"></div>
+                </div>
+
+                <div id="resultContainer" class="hidden">
+                    <div class="result-box">
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">Parsed Data</h3>
+                        <div id="parsedData" class="parsed-data"></div>
+                    </div>
+                </div>
+
+                <div id="transmissionInfo" class="hidden">
+                    <div class="result-box">
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">Transmission Info</h3>
+                        <div id="transmissionDetails"></div>
+                    </div>
+                </div>
+
+                <div id="testServerResult" class="hidden">
+                    <div class="result-box">
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">Test Server Result</h3>
+                        <div id="testServerDetails"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        const examples = [
+            "<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8",
+            "<165>Aug 24 05:34:00 mymachine myproc[10]: %% It's time to make the do-nuts. %%",
+            "<0>Oct 22 10:52:01 scapegoat sched[0]: That's All Folks!"
+        ];
+
+        function useExample(index) {
+            document.getElementById('syslogMessage').value = examples[index];
+        }
+
+        function showStatus(message, isError = false) {
+            const statusContainer = document.getElementById('statusContainer');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            statusMessage.textContent = message;
+            statusMessage.className = `status ${isError ? 'error' : 'success'}`;
+            statusContainer.classList.remove('hidden');
+        }
+
+        function hideStatus() {
+            document.getElementById('statusContainer').classList.add('hidden');
+        }
+
+        function showResults(data) {
+            const resultContainer = document.getElementById('resultContainer');
+            const parsedData = document.getElementById('parsedData');
+            
+            if (data.parsed_message) {
+                const msg = data.parsed_message;
+                parsedData.innerHTML = `
+                    <div class="data-item">
+                        <div class="data-label">Priority</div>
+                        <div class="data-value">${msg.priority}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Facility</div>
+                        <div class="data-value">${msg.facility}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Severity</div>
+                        <div class="data-value">${msg.severity}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Timestamp</div>
+                        <div class="data-value">${msg.timestamp}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Hostname</div>
+                        <div class="data-value">${msg.hostname}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Tag</div>
+                        <div class="data-value">${msg.tag}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">PID</div>
+                        <div class="data-value">${msg.pid || 'N/A'}</div>
+                    </div>
+                    <div class="data-item" style="grid-column: 1 / -1;">
+                        <div class="data-label">Message</div>
+                        <div class="data-value">${msg.message}</div>
+                    </div>
+                `;
+                resultContainer.classList.remove('hidden');
+            }
+        }
+
+        function showTransmissionInfo(sentTo) {
+            if (sentTo) {
+                const transmissionInfo = document.getElementById('transmissionInfo');
+                const transmissionDetails = document.getElementById('transmissionDetails');
+                
+                transmissionDetails.innerHTML = `
+                    <div class="data-item">
+                        <div class="data-label">Sent To</div>
+                        <div class="data-value">${sentTo}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Status</div>
+                        <div class="data-value">✅ Successfully Transmitted</div>
+                    </div>
+                `;
+                transmissionInfo.classList.remove('hidden');
+            }
+        }
+
+        function showTestServerResult(result) {
+            const testServerResult = document.getElementById('testServerResult');
+            const testServerDetails = document.getElementById('testServerDetails');
+            
+            if (result.success) {
+                testServerDetails.innerHTML = `
+                    <div class="data-item">
+                        <div class="data-label">Server Status</div>
+                        <div class="data-value">✅ Test server received message</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Received Message</div>
+                        <div class="data-value">${result.received_message}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">From Address</div>
+                        <div class="data-value">${result.from_address}</div>
+                    </div>
+                `;
+            } else {
+                testServerDetails.innerHTML = `
+                    <div class="data-item">
+                        <div class="data-label">Server Status</div>
+                        <div class="data-value">❌ ${result.error}</div>
+                    </div>
+                `;
+            }
+            testServerResult.classList.remove('hidden');
+        }
+
+        function hideResults() {
+            document.getElementById('resultContainer').classList.add('hidden');
+            document.getElementById('transmissionInfo').classList.add('hidden');
+            document.getElementById('testServerResult').classList.add('hidden');
+        }
+
+        function setLoading(btnId, loaderId, textId, isLoading) {
+            const btn = document.getElementById(btnId);
+            const loader = document.getElementById(loaderId);
+            const text = document.getElementById(textId);
+            
+            btn.disabled = isLoading;
+            if (isLoading) {
+                loader.classList.remove('hidden');
+                text.textContent = text.textContent + '...';
+            } else {
+                loader.classList.add('hidden');
+                text.textContent = text.textContent.replace('...', '');
+            }
+        }
+
+        async function startTestServer() {
+            const port = document.getElementById('targetPort').value || 5140;
+            
+            hideResults();
+            hideStatus();
+            setLoading('testBtn', 'testBtnLoader', 'testBtnText', true);
+
+            try {
+                // 테스트 서버 시작 (비동기 - 메시지를 기다림)
+                const response = await fetch(`${API_BASE_URL}/test-server/${port}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                showTestServerResult(result);
+                
+                if (result.success) {
+                    showStatus('Test server received message successfully!');
+                } else {
+                    showStatus(result.error || 'Test server timeout', true);
+                }
+
+            } catch (error) {
+                showStatus(`Test server error: ${error.message}`, true);
+            } finally {
+                setLoading('testBtn', 'testBtnLoader', 'testBtnText', false);
+            }
+        }
+
+        async function parseAndSend() {
+            const message = document.getElementById('syslogMessage').value.trim();
+            const server = document.getElementById('targetServer').value.trim();
+            const port = parseInt(document.getElementById('targetPort').value);
+            const protocol = document.getElementById('protocol').value;
+
+            if (!message) {
+                showStatus('Please enter a syslog message', true);
+                return;
+            }
+
+            if (!server) {
+                showStatus('Please enter target server', true);
+                return;
+            }
+
+            if (!port || port < 1 || port > 65535) {
+                showStatus('Please enter a valid port (1-65535)', true);
+                return;
+            }
+
+            hideResults();
+            hideStatus();
+            setLoading('sendBtn', 'sendBtnLoader', 'sendBtnText', true);
+
+            try {
+                console.log('Sending request:', {
+                    raw_message: message,
+                    target_server: server,
+                    target_port: port,
+                    protocol: protocol
+                });
+
+                const response = await fetch(`${API_BASE_URL}/parse`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        raw_message: message,
+                        target_server: server,
+                        target_port: port,
+                        protocol: protocol
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response:', data);
+
+                if (data.success) {
+                    showStatus('Message parsed and sent successfully!');
+                    showResults(data);
+                    showTransmissionInfo(data.sent_to);
+                } else {
+                    showStatus(data.error || 'Unknown error occurred', true);
+                }
+            } catch (error) {
+                console.error('Request error:', error);
+                showStatus(`Connection error: ${error.message}. Make sure backend is running on ${API_BASE_URL}`, true);
+            } finally {
+                setLoading('sendBtn', 'sendBtnLoader', 'sendBtnText', false);
+            }
+        }
+
+        async function parseOnly() {
+            const message = document.getElementById('syslogMessage').value.trim();
+
+            if (!message) {
+                showStatus('Please enter a syslog message', true);
+                return;
+            }
+
+            hideResults();
+            hideStatus();
+            setLoading('parseBtn', 'parseBtnLoader', 'parseBtnText', true);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/parse-only`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `raw_message=${encodeURIComponent(message)}`
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showStatus('Message parsed successfully!');
+                    showResults(data);
+                } else {
+                    showStatus(data.error || 'Unknown error occurred', true);
+                }
+            } catch (error) {
+                showStatus(`Connection error: ${error.message}. Make sure backend is running on ${API_BASE_URL}`, true);
+            } finally {
+                setLoading('parseBtn', 'parseBtnLoader', 'parseBtnText', false);
+            }
+        }
+
+        // 페이지 로드 시 첫 번째 예제 메시지 설정
+        window.addEventListener('DOMContentLoaded', () => {
+            useExample(0);
+            // 백엔드 연결 테스트
+            fetch(`${API_BASE_URL}/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('✅ Backend connection successful:', data);
+                })
+                .catch(error => {
+                    console.error('❌ Backend connection failed:', error);
+                    showStatus('⚠️ Backend connection failed. Make sure the server is running at ' + API_BASE_URL, true);
+                });
+        });
+    </script>
+</body>
+</html>
