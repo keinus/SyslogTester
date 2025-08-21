@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core import settings
 from app.routers import syslog_router, test_router, info_router
+from app.routers.examples import router as examples_router
 
 # Create FastAPI application
 app = FastAPI(
@@ -29,6 +30,7 @@ app.add_middleware(
 app.include_router(info_router)
 app.include_router(syslog_router)
 app.include_router(test_router)
+app.include_router(examples_router)
 
 
 @app.get("/")

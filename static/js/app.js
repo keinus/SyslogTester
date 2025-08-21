@@ -2,28 +2,10 @@
 
 const API_BASE_URL = 'http://localhost:8001';
 
-// Example messages with FortiGate examples
-const examples = {
-    "3164": [
-        // Standard RFC 3164 examples
-        "<34>Oct 11 22:14:15 mymachine su: 'su root' failed for lonvick on /dev/pts/8",
-        "<165>Aug 24 05:34:00 mymachine myproc[10]: %% It's time to make the do-nuts. %%",
-        "<0>Oct 22 10:52:01 scapegoat sched[0]: That's All Folks!",
-        // FortiGate RFC 3164 examples
-        "<189>date=2024-08-20 time=14:30:45 devname=FortiGate-100E devid=FG100E1234567890 logid=0000000013 type=traffic subtype=forward level=notice vd=root eventtime=1724159445 srcip=192.168.1.100 srcname=client01 srcport=12345 srcintf=internal dstip=8.8.8.8 dstname=dns.google dstport=53 dstintf=wan1 policyid=5 policyname=internet_access service=DNS proto=17 action=accept policytype=policy duration=120 sentbyte=1024 rcvdbyte=2048 sentpkt=10 rcvdpkt=12 appcat=unscanned",
-        "<133>date=2024-08-20 time=14:25:30 devname=FortiGate-100E devid=FG100E1234567890 logid=0001000014 type=utm subtype=virus level=warning vd=root eventtime=1724159130 srcip=192.168.1.50 srcname=workstation05 srcport=80 srcintf=internal dstip=malicious.example.com dstport=443 dstintf=wan1 policyid=3 service=HTTPS proto=6 action=blocked virus=Trojan.Generic filename=malware.exe quarskip=No-skip",
-        "<134>date=2024-08-20 time=14:20:15 devname=FortiGate-100E devid=FG100E1234567890 logid=0100032001 type=event subtype=system level=information vd=root eventtime=1724158815 logdesc=Admin user authenticated user=admin srcip=192.168.1.10 ui=GUI action=login status=success reason=None msg=User admin logged in successfully from 192.168.1.10"
-    ],
-    "5424": [
-        // Standard RFC 5424 examples
-        "<34>1 2003-10-11T22:14:15.003Z mymachine su - ID47 - BOM'su root' failed for lonvick on /dev/pts/8",
-        "<165>1 2021-08-24T05:34:00.000Z mymachine myproc 10 ID123 - %% It's time to make the do-nuts. %%",
-        "<0>1 2021-10-22T10:52:01.000Z scapegoat sched 0 ID001 - That's All Folks!",
-        // FortiGate RFC 5424 examples  
-        "<189>1 2024-08-20T14:30:45.123Z FortiGate-100E fortigate 1001 0000000013 [fortinet@32473 devid=\"FG100E1234567890\" vd=\"root\" eventtime=\"1724159445\"] type=traffic subtype=forward level=notice srcip=192.168.1.100 dstip=8.8.8.8 action=accept",
-        "<133>1 2024-08-20T14:25:30.456Z FortiGate-100E fortigate 2001 0001000014 [fortinet@32473 devid=\"FG100E1234567890\" vd=\"root\" eventtime=\"1724159130\"] type=utm subtype=virus level=warning srcip=192.168.1.50 action=blocked virus=Trojan.Generic",
-        "<134>1 2024-08-20T14:20:15.789Z FortiGate-100E fortigate 3001 0100032001 [fortinet@32473 devid=\"FG100E1234567890\" vd=\"root\" eventtime=\"1724158815\"] type=event subtype=system level=information user=admin action=login status=success"
-    ]
+// Examples from database
+let examples = {
+    "3164": [],
+    "5424": []
 };
 
 // Utility functions
@@ -48,6 +30,7 @@ function hideStatus() {
 function hideResults() {
     document.getElementById('resultContainer').classList.add('hidden');
     document.getElementById('transmissionInfo').classList.add('hidden');
+    document.getElementById('saveExampleSection').classList.add('hidden');
 }
 
 function setLoading(btnId, loaderId, textId, isLoading) {
@@ -65,6 +48,69 @@ function setLoading(btnId, loaderId, textId, isLoading) {
     }
 }
 
+// Example management functions
+async function loadExamples() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/examples/`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.examples) {
+                examples["3164"] = data.examples.filter(ex => ex.rfc_version === "3164");
+                examples["5424"] = data.examples.filter(ex => ex.rfc_version === "5424");
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load examples:', error);
+    }
+}
+
+async function saveExample(name, description, rfcVersion, rawMessage) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/examples/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                description: description,
+                rfc_version: rfcVersion,
+                raw_message: rawMessage
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            await loadExamples();
+            updateExamples();
+            showStatus(`Example "${name}" saved successfully!`);
+        } else {
+            showStatus(`Failed to save example: ${data.error}`, true);
+        }
+    } catch (error) {
+        showStatus(`Error saving example: ${error.message}`, true);
+    }
+}
+
+async function deleteExample(exampleId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/examples/${exampleId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            await loadExamples();
+            updateExamples();
+            showStatus('Example deleted successfully!');
+        } else {
+            showStatus(`Failed to delete example: ${data.error}`, true);
+        }
+    } catch (error) {
+        showStatus(`Error deleting example: ${error.message}`, true);
+    }
+}
+
 // Example management
 function updateExamples() {
     const rfcVersion = document.getElementById('exampleRfcVersion').value;
@@ -73,55 +119,55 @@ function updateExamples() {
     
     container.innerHTML = '';
     
-    // Add category headers for better organization
-    const categories = {
-        '3164': ['Standard Examples', 'FortiGate Examples'],
-        '5424': ['Standard Examples', 'FortiGate Examples']
-    };
-    
-    const categoryRanges = {
-        '3164': [3, 6], // First 3 are standard, next 3 are FortiGate
-        '5424': [3, 6]
-    };
-    
-    let currentCategory = 0;
-    rfcExamples.forEach((example, index) => {
-        // Add category header
-        if (index === 0 || index === categoryRanges[rfcVersion][0]) {
-            const categoryHeader = document.createElement('div');
-            categoryHeader.className = 'category-header';
-            categoryHeader.innerHTML = `<h4>${categories[rfcVersion][currentCategory]}</h4>`;
-            container.appendChild(categoryHeader);
-            currentCategory++;
-        }
-        
-        const div = document.createElement('div');
-        div.className = 'example-item';
-        div.onclick = () => useExample(rfcVersion, index);
-        
-        // Truncate long FortiGate messages for display
-        let displayText = example;
-        if (example.length > 150) {
-            displayText = example.substring(0, 147) + '...';
-        }
-        
-        div.innerHTML = `
-            <div class="example-preview">${displayText}</div>
-            ${example.length > 150 ? `<div class="example-tooltip" title="${example}">🔍 Click to use full message</div>` : ''}
+    // Show examples from database
+    if (rfcExamples.length > 0) {        
+        rfcExamples.forEach((example) => {
+            const div = document.createElement('div');
+            div.className = 'example-item';
+            div.onclick = () => useExample(example);
+            
+            let displayText = example.raw_message;
+            if (displayText.length > 150) {
+                displayText = displayText.substring(0, 147) + '...';
+            }
+            
+            div.innerHTML = `
+                <div class="example-preview">
+                    <strong>${example.name}</strong>
+                    ${example.description ? `<br><small>${example.description}</small>` : ''}
+                    <br>${displayText}
+                </div>
+                <div class="example-actions">
+                    <button onclick="event.stopPropagation(); deleteExample(${example.id})" class="delete-btn" title="Delete example">🗑️</button>
+                    ${example.raw_message.length > 150 ? '<span class="example-tooltip" title="' + example.raw_message + '">🔍</span>' : ''}
+                </div>
+            `;
+            
+            container.appendChild(div);
+        });
+    } else {
+        // Show message when no examples available
+        const noExamples = document.createElement('div');
+        noExamples.className = 'no-examples';
+        noExamples.innerHTML = `
+            <p style="text-align: center; color: #6b7280; padding: 20px;">
+                No examples available for RFC ${rfcVersion}.<br>
+                Create messages and save them as examples to see them here.
+            </p>
         `;
-        
-        container.appendChild(div);
-    });
+        container.appendChild(noExamples);
+    }
 }
 
-function useExample(rfcVersion, index) {
+function useExample(example) {
     const inputMode = document.getElementById('inputMode').value;
-    const exampleMessage = examples[rfcVersion][index];
+    const exampleMessage = example.raw_message;
+    const rfcVersion = example.rfc_version;
     
     if (inputMode === 'raw') {
         document.getElementById('syslogMessage').value = exampleMessage;
         document.getElementById('rfcVersion').value = rfcVersion;
-        showStatus(`Example ${index + 1} loaded successfully!`);
+        showStatus(`Example "${example.name}" loaded successfully!`);
     } else {
         // Parse the example and fill component fields
         document.getElementById('rfcVersion').value = rfcVersion;
@@ -135,7 +181,7 @@ function useExample(rfcVersion, index) {
             // Parse message into components
             const components = parseMessageToComponents(messageContent);
             populateMessageComponents(components);
-            showStatus(`Example ${index + 1} loaded as components!`);
+            showStatus(`Example "${example.name}" loaded as components!`);
         } else {
             // Switch to component mode and ask user
             const confirmSwitch = confirm('This example contains key=value data. Switch to Key-Value Components mode for better editing?');
@@ -144,11 +190,11 @@ function useExample(rfcVersion, index) {
                 toggleMessageMode();
                 const components = parseMessageToComponents(messageContent);
                 populateMessageComponents(components);
-                showStatus(`Example ${index + 1} loaded in Components mode!`);
+                showStatus(`Example "${example.name}" loaded in Components mode!`);
             } else {
                 // Load as simple text
                 document.getElementById('message').value = messageContent;
-                showStatus(`Example ${index + 1} loaded as text!`);
+                showStatus(`Example "${example.name}" loaded as text!`);
             }
         }
     }
@@ -379,6 +425,39 @@ function getMessageComponents() {
     }
     
     return components;
+}
+
+// Save current example functionality
+let lastGeneratedMessage = null;
+let lastRfcVersion = null;
+
+function saveCurrentExample() {
+    const name = document.getElementById('exampleName').value.trim();
+    const description = document.getElementById('exampleDescription').value.trim();
+    
+    if (!name) {
+        showStatus('Please enter an example name', true);
+        return;
+    }
+    
+    if (!lastGeneratedMessage || !lastRfcVersion) {
+        showStatus('No message to save. Please generate a message first.', true);
+        return;
+    }
+    
+    saveExample(name, description || null, lastRfcVersion, lastGeneratedMessage);
+    
+    // Clear the form
+    document.getElementById('exampleName').value = '';
+    document.getElementById('exampleDescription').value = '';
+}
+
+function showSaveExampleSection(generatedMessage, rfcVersion) {
+    lastGeneratedMessage = generatedMessage;
+    lastRfcVersion = rfcVersion;
+    
+    const saveSection = document.getElementById('saveExampleSection');
+    saveSection.classList.remove('hidden');
 }
 
 // Message component management functions
@@ -671,6 +750,8 @@ async function generateAndSend() {
             showResults(data);
             if (data.generated_message) {
                 showGeneratedMessage(data.generated_message);
+                const rfcVersion = document.getElementById('rfcVersion').value;
+                showSaveExampleSection(data.generated_message, rfcVersion);
             }
             if (data.sent_to) {
                 showTransmissionInfo(data.sent_to);
@@ -714,6 +795,8 @@ async function generateOnly() {
             showResults(data);
             if (data.generated_message) {
                 showGeneratedMessage(data.generated_message);
+                const rfcVersion = document.getElementById('rfcVersion').value;
+                showSaveExampleSection(data.generated_message, rfcVersion);
             }
         } else {
             showStatus(data.error || 'Unknown error occurred', true);
@@ -837,7 +920,9 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Syslog Parser Application Initialized');
     
     // Initialize UI
-    updateExamples();
+    loadExamples().then(() => {
+        updateExamples();
+    });
     toggleRfcFields();
     toggleInputMode();
     toggleMessageMode();
