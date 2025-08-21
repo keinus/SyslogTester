@@ -326,10 +326,15 @@ textarea {
     border: 1px solid var(--gray-200);
 }
 
-.message-component input {
+.message-component input[type="text"] {
     flex: 1;
     min-width: 120px;
     margin: 0;
+}
+
+.message-component input[type="checkbox"] {
+    margin: 0 4px;
+    cursor: pointer;
 }
 
 .message-component button {

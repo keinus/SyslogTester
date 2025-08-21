@@ -384,20 +384,50 @@ function getMessageComponents() {
 // Message component management functions
 function addMessageComponent(key = '', value = '') {
     const container = document.getElementById('messageComponents');
-    const componentId = 'component_' + Date.now();
+    const componentId = 'component_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     
     const div = document.createElement('div');
     div.className = 'message-component';
     div.id = componentId;
     
-    div.innerHTML = `
-        <input type="text" placeholder="Key" value="${key}" class="component-key">
-        <span>=</span>
-        <input type="text" placeholder="Value" value="${value}" class="component-value">
-        <button type="button" onclick="removeMessageComponent('${componentId}')" title="Remove component">
-            ❌
-        </button>
-    `;
+    // Create elements separately to avoid event binding issues
+    const keyInput = document.createElement('input');
+    keyInput.type = 'text';
+    keyInput.placeholder = 'Key';
+    keyInput.value = key;
+    keyInput.className = 'component-key';
+    
+    const equalSpan = document.createElement('span');
+    equalSpan.textContent = '=';
+    
+    const valueInput = document.createElement('input');
+    valueInput.type = 'text';
+    valueInput.placeholder = 'Value';
+    valueInput.value = value;
+    valueInput.className = 'component-value';
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'random-checkbox';
+    checkbox.title = 'Generate random value';
+    checkbox.addEventListener('change', function() {
+        toggleRandomValue(componentId);
+    });
+    
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.textContent = '❌';
+    removeButton.title = 'Remove component';
+    removeButton.addEventListener('click', function() {
+        removeMessageComponent(componentId);
+    });
+    
+    // Append all elements
+    div.appendChild(keyInput);
+    div.appendChild(equalSpan);
+    div.appendChild(valueInput);
+    div.appendChild(checkbox);
+    div.appendChild(removeButton);
     
     container.appendChild(div);
 }
@@ -409,13 +439,97 @@ function removeMessageComponent(componentId) {
     }
 }
 
+// Random value generation functions
+function generateRandomValue(key) {
+    const keyLower = key.toLowerCase();
+    
+    // Common patterns for different types of values
+    if (keyLower.includes('ip') || keyLower.includes('addr')) {
+        return generateRandomIP();
+    } else if (keyLower.includes('port')) {
+        return Math.floor(Math.random() * 65536).toString();
+    } else if (keyLower.includes('time') || keyLower.includes('date')) {
+        return new Date().toISOString().slice(0, 19) + 'Z';
+    } else if (keyLower.includes('id') || keyLower.includes('pid')) {
+        return Math.floor(Math.random() * 99999 + 1).toString();
+    } else if (keyLower.includes('size') || keyLower.includes('byte') || keyLower.includes('length')) {
+        return Math.floor(Math.random() * 1048576 + 1).toString();
+    } else if (keyLower.includes('status') || keyLower.includes('action')) {
+        const actions = ['accept', 'deny', 'block', 'allow', 'success', 'failed'];
+        return actions[Math.floor(Math.random() * actions.length)];
+    } else if (keyLower.includes('level') || keyLower.includes('severity')) {
+        const levels = ['info', 'warning', 'error', 'debug', 'notice'];
+        return levels[Math.floor(Math.random() * levels.length)];
+    } else if (keyLower.includes('type')) {
+        const types = ['traffic', 'utm', 'event', 'system', 'security'];
+        return types[Math.floor(Math.random() * types.length)];
+    } else if (keyLower.includes('name') || keyLower.includes('user')) {
+        const names = ['admin', 'user1', 'guest', 'operator', 'test'];
+        return names[Math.floor(Math.random() * names.length)];
+    } else {
+        // Generic random string
+        return 'random_' + Math.random().toString(36).substring(2, 10);
+    }
+}
+
+function generateRandomIP() {
+    return Math.floor(Math.random() * 256) + '.' +
+           Math.floor(Math.random() * 256) + '.' +
+           Math.floor(Math.random() * 256) + '.' +
+           Math.floor(Math.random() * 256);
+}
+
+function toggleRandomValue(componentId) {
+    const component = document.getElementById(componentId);
+    if (!component) {
+        console.error('Component not found:', componentId);
+        return;
+    }
+    
+    const checkbox = component.querySelector('.random-checkbox');
+    const valueInput = component.querySelector('.component-value');
+    const keyInput = component.querySelector('.component-key');
+    
+    if (!checkbox || !valueInput || !keyInput) {
+        console.error('Component elements not found in:', componentId);
+        return;
+    }
+    
+    if (checkbox.checked) {
+        valueInput.disabled = true;
+        valueInput.style.backgroundColor = '#f3f4f6';
+        valueInput.style.color = '#6b7280';
+        
+        // Generate random value based on key
+        const key = keyInput.value.trim();
+        if (key) {
+            valueInput.value = generateRandomValue(key);
+        } else {
+            valueInput.value = 'random_' + Math.random().toString(36).substring(2, 10);
+        }
+    } else {
+        valueInput.disabled = false;
+        valueInput.style.backgroundColor = '';
+        valueInput.style.color = '';
+    }
+}
+
 function getMessageFromComponents() {
     const components = document.querySelectorAll('.message-component');
     const pairs = [];
     
     components.forEach(component => {
         const key = component.querySelector('.component-key').value.trim();
-        const value = component.querySelector('.component-value').value.trim();
+        const valueInput = component.querySelector('.component-value');
+        const checkbox = component.querySelector('.random-checkbox');
+        
+        let value = valueInput.value.trim();
+        
+        // If random checkbox is checked, generate new random value
+        if (checkbox.checked && key) {
+            value = generateRandomValue(key);
+            valueInput.value = value; // Update the display
+        }
         
         if (key && value) {
             pairs.push(`${key}=${value}`);
