@@ -874,17 +874,7 @@ kbd {
     }
 }
 
-.status {
-    animation: fadeIn 0.3s ease;
-}
-
-.result-box {
-    animation: slideIn 0.4s ease;
-}
-
-.example-item {
-    animation: fadeIn 0.2s ease;
-}
+/* Animation additions merged with existing selectors */
 
 /* Progress bar animation */
 @keyframes progress {
@@ -935,10 +925,7 @@ kbd {
     border-top-color: rgba(255, 255, 255, 0.8);
 }
 
-/* Enhanced shadow effects */
-.section-header {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
+/* Enhanced shadow effects merged with existing selectors */
 
 .result-box:hover {
     transform: translateY(-1px);

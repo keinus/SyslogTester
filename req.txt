@@ -1,1 +1,0 @@
-rfc3164 프로토콜 파서 패킷을 생성하여 설정된 서버로 전송하는 SW를 python, fastapi로 구현. frontend도 구현.
