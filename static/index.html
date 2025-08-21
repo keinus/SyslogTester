@@ -127,8 +127,30 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="message">Message:</label>
-                            <textarea id="message" placeholder="Your log message here" rows="3"></textarea>
+                            <label>Message Mode:</label>
+                            <select id="messageMode" onchange="toggleMessageMode()">
+                                <option value="text">Simple Text</option>
+                                <option value="components">Key-Value Components</option>
+                            </select>
+                        </div>
+                        
+                        <div id="textMessageSection">
+                            <div class="form-group">
+                                <label for="message">Message:</label>
+                                <textarea id="message" placeholder="Your log message here" rows="3"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div id="componentMessageSection" class="hidden">
+                            <div class="form-group">
+                                <label>Message Components (key=value format):</label>
+                                <div id="messageComponents">
+                                    <!-- Message components will be added here dynamically -->
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-small" onclick="addMessageComponent()">
+                                    ➕ Add Component
+                                </button>
+                            </div>
                         </div>
                     </div>
                     

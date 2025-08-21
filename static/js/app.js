@@ -151,6 +151,24 @@ function toggleRfcFields() {
     }
 }
 
+function toggleMessageMode() {
+    const messageMode = document.getElementById('messageMode').value;
+    const textSection = document.getElementById('textMessageSection');
+    const componentSection = document.getElementById('componentMessageSection');
+    
+    if (messageMode === 'components') {
+        textSection.classList.add('hidden');
+        componentSection.classList.remove('hidden');
+        // Add initial component if none exist
+        if (document.getElementById('messageComponents').children.length === 0) {
+            addMessageComponent();
+        }
+    } else {
+        textSection.classList.remove('hidden');
+        componentSection.classList.add('hidden');
+    }
+}
+
 function toggleInputMode() {
     const inputMode = document.getElementById('inputMode').value;
     const rawSection = document.getElementById('rawInputSection');
@@ -313,9 +331,15 @@ function getMessageComponents() {
     const hostname = document.getElementById('hostname').value.trim();
     if (hostname) components.hostname = hostname;
     
-    // Get message
-    const message = document.getElementById('message').value.trim();
-    if (message) components.message = message;
+    // Get message based on message mode
+    const messageMode = document.getElementById('messageMode').value;
+    if (messageMode === 'components') {
+        const componentMessage = getMessageFromComponents();
+        if (componentMessage) components.message = componentMessage;
+    } else {
+        const message = document.getElementById('message').value.trim();
+        if (message) components.message = message;
+    }
     
     // RFC specific fields
     if (rfcVersion === '5424') {
@@ -337,6 +361,50 @@ function getMessageComponents() {
     }
     
     return components;
+}
+
+// Message component management functions
+function addMessageComponent(key = '', value = '') {
+    const container = document.getElementById('messageComponents');
+    const componentId = 'component_' + Date.now();
+    
+    const div = document.createElement('div');
+    div.className = 'message-component';
+    div.id = componentId;
+    
+    div.innerHTML = `
+        <input type="text" placeholder="Key" value="${key}" class="component-key">
+        <span>=</span>
+        <input type="text" placeholder="Value" value="${value}" class="component-value">
+        <button type="button" onclick="removeMessageComponent('${componentId}')" title="Remove component">
+            ❌
+        </button>
+    `;
+    
+    container.appendChild(div);
+}
+
+function removeMessageComponent(componentId) {
+    const component = document.getElementById(componentId);
+    if (component) {
+        component.remove();
+    }
+}
+
+function getMessageFromComponents() {
+    const components = document.querySelectorAll('.message-component');
+    const pairs = [];
+    
+    components.forEach(component => {
+        const key = component.querySelector('.component-key').value.trim();
+        const value = component.querySelector('.component-value').value.trim();
+        
+        if (key && value) {
+            pairs.push(`${key}=${value}`);
+        }
+    });
+    
+    return pairs.join(' ');
 }
 
 // API call functions
@@ -555,6 +623,7 @@ window.addEventListener('DOMContentLoaded', () => {
     updateExamples();
     toggleRfcFields();
     toggleInputMode();
+    toggleMessageMode();
     
     // Set default values
     document.getElementById('facility').value = '4';
@@ -577,6 +646,7 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('exampleRfcVersion').addEventListener('change', updateExamples);
     document.getElementById('rfcVersion').addEventListener('change', toggleRfcFields);
     document.getElementById('inputMode').addEventListener('change', toggleInputMode);
+    document.getElementById('messageMode').addEventListener('change', toggleMessageMode);
     
     // Add keyboard shortcuts
     document.addEventListener('keydown', (e) => {
