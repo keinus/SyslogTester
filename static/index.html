@@ -18,32 +18,40 @@
         </div>
 
         <div class="main-content">
-            <!-- Example Messages Section -->
-            <div class="section example-section">
-                <div class="section-header">
-                    <h2 class="section-title">📋 Example Messages</h2>
-                </div>
-                <div class="section-body">
-                    <div class="form-group">
-                        <label for="exampleRfcVersion">RFC Version:</label>
-                        <select id="exampleRfcVersion" onchange="updateExamples()">
-                            <option value="3164">RFC 3164</option>
-                            <option value="5424">RFC 5424</option>
-                        </select>
+            <div class="grid-layout">
+                <!-- Left Column: Examples -->
+                <div class="left-column">
+                    <div class="section example-section">
+                        <div class="section-header">
+                            <h2 class="section-title">📋 Example Messages</h2>
+                        </div>
+                        <div class="section-body">
+                            <div class="form-group">
+                                <label for="exampleRfcVersion">RFC Version:</label>
+                                <select id="exampleRfcVersion" onchange="updateExamples()">
+                                    <option value="3164">RFC 3164</option>
+                                    <option value="5424">RFC 5424</option>
+                                </select>
+                            </div>
+                            
+                            <div id="exampleMessages" class="example-messages">
+                                <!-- Examples will be populated by JavaScript -->
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div id="exampleMessages" class="example-messages">
-                        <!-- Examples will be populated by JavaScript -->
-                    </div>
                 </div>
-            </div>
-            
-            <!-- Message Configuration Section -->
-            <div class="section input-section">
+
+                <!-- Center Column: Configuration -->
+                <div class="center-column">
+                    <!-- Message Configuration Section -->
+                    <div class="section input-section">
                 <div class="section-header">
                     <h2 class="section-title">⚙️ Message Configuration</h2>
+                    <button class="collapse-btn" onclick="toggleSection('messageConfig')" id="messageConfigToggle">
+                        <span>▼</span>
+                    </button>
                 </div>
-                <div class="section-body">
+                <div class="section-body" id="messageConfigBody">
                     <div class="form-group">
                         <label for="rfcVersion">RFC Version:</label>
                         <select id="rfcVersion" onchange="toggleRfcFields()">
@@ -71,63 +79,73 @@
                     
                     <!-- Component Input Section -->
                     <div id="componentInputSection">
-                        <div class="form-group">
-                            <label>Priority/Facility/Severity:</label>
-                            <div class="server-config">
-                                <input type="number" id="priority" placeholder="Priority (optional)" min="0" max="191" class="tooltip" data-tooltip="Calculate from facility*8 + severity">
-                                <input type="number" id="facility" placeholder="Facility (0-23)" min="0" max="23" class="tooltip" data-tooltip="0=kernel, 4=security, 16=local0">
-                                <input type="number" id="severity" placeholder="Severity (0-7)" min="0" max="7" class="tooltip" data-tooltip="0=emergency, 4=warning, 6=info">
+                        <!-- Basic Configuration -->
+                        <div class="config-row">
+                            <div class="config-group">
+                                <label for="priority">Priority:</label>
+                                <input type="number" id="priority" placeholder="Optional" min="0" max="191" class="tooltip" data-tooltip="Calculate from facility*8 + severity">
+                            </div>
+                            <div class="config-group">
+                                <label for="facility">Facility:</label>
+                                <input type="number" id="facility" placeholder="0-23" min="0" max="23" class="tooltip" data-tooltip="0=kernel, 4=security, 16=local0">
+                            </div>
+                            <div class="config-group">
+                                <label for="severity">Severity:</label>
+                                <input type="number" id="severity" placeholder="0-7" min="0" max="7" class="tooltip" data-tooltip="0=emergency, 4=warning, 6=info">
                             </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label for="timestamp">Timestamp (optional):</label>
-                            <input type="text" id="timestamp" placeholder="Leave empty for auto-generation" class="tooltip" data-tooltip="RFC 3164: Oct 11 22:14:15 | RFC 5424: 2003-10-11T22:14:15.003Z">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="hostname">Hostname:</label>
-                            <input type="text" id="hostname" placeholder="localhost" value="localhost">
+                        <div class="config-row">
+                            <div class="config-group">
+                                <label for="timestamp">Timestamp:</label>
+                                <input type="text" id="timestamp" placeholder="Auto-generated" class="tooltip" data-tooltip="RFC 3164: Oct 11 22:14:15 | RFC 5424: 2003-10-11T22:14:15.003Z">
+                            </div>
+                            <div class="config-group">
+                                <label for="hostname">Hostname:</label>
+                                <input type="text" id="hostname" placeholder="localhost" value="localhost">
+                            </div>
                         </div>
                         
                         <!-- RFC 3164 specific fields -->
                         <div id="rfc3164Fields">
-                            <div class="form-group">
-                                <label for="tag">Tag:</label>
-                                <input type="text" id="tag" placeholder="app" value="app" class="tooltip" data-tooltip="Application or service name">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="pid">Process ID (optional):</label>
-                                <input type="number" id="pid" placeholder="PID" class="tooltip" data-tooltip="Process ID of the application">
+                            <div class="config-row">
+                                <div class="config-group">
+                                    <label for="tag">Tag:</label>
+                                    <input type="text" id="tag" placeholder="app" value="app" class="tooltip" data-tooltip="Application or service name">
+                                </div>
+                                <div class="config-group">
+                                    <label for="pid">Process ID:</label>
+                                    <input type="number" id="pid" placeholder="PID" class="tooltip" data-tooltip="Process ID of the application">
+                                </div>
                             </div>
                         </div>
                         
                         <!-- RFC 5424 specific fields -->
                         <div id="rfc5424Fields" class="hidden">
-                            <div class="form-group">
-                                <label for="appName">App Name:</label>
-                                <input type="text" id="appName" placeholder="app" value="app" class="tooltip" data-tooltip="Application name (RFC 5424)">
+                            <div class="config-row">
+                                <div class="config-group">
+                                    <label for="appName">App Name:</label>
+                                    <input type="text" id="appName" placeholder="app" value="app" class="tooltip" data-tooltip="Application name (RFC 5424)">
+                                </div>
+                                <div class="config-group">
+                                    <label for="procId">Process ID:</label>
+                                    <input type="text" id="procId" placeholder="ProcID" class="tooltip" data-tooltip="Process ID or thread ID">
+                                </div>
                             </div>
-                            
-                            <div class="form-group">
-                                <label for="procId">Process ID (optional):</label>
-                                <input type="text" id="procId" placeholder="ProcID" class="tooltip" data-tooltip="Process ID or thread ID">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="msgId">Message ID (optional):</label>
-                                <input type="text" id="msgId" placeholder="MsgID" class="tooltip" data-tooltip="Message type identifier">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="structuredData">Structured Data (optional):</label>
-                                <input type="text" id="structuredData" placeholder='[exampleSDID@32473 iut="3" eventSource="Application"]' class="tooltip" data-tooltip="RFC 5424 structured data elements">
+                            <div class="config-row">
+                                <div class="config-group">
+                                    <label for="msgId">Message ID:</label>
+                                    <input type="text" id="msgId" placeholder="MsgID" class="tooltip" data-tooltip="Message type identifier">
+                                </div>
+                                <div class="config-group">
+                                    <label for="structuredData">Structured Data:</label>
+                                    <input type="text" id="structuredData" placeholder='[exampleSDID@32473...]' class="tooltip" data-tooltip="RFC 5424 structured data elements">
+                                </div>
                             </div>
                         </div>
                         
                         <div class="form-group">
-                            <label>Message Mode:</label>
+                            <label for="messageMode">Message Mode:</label>
                             <select id="messageMode" onchange="toggleMessageMode()">
                                 <option value="text">Simple Text</option>
                                 <option value="components">Key-Value Components</option>
@@ -143,7 +161,7 @@
                         
                         <div id="componentMessageSection" class="hidden">
                             <div class="form-group">
-                                <label>Message Components (key=value format):</label>
+                                <label for="messageComponents">Message Components (key=value format):</label>
                                 <div id="messageComponents">
                                     <!-- Message components will be added here dynamically -->
                                 </div>
@@ -154,11 +172,18 @@
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label>Target Server Configuration:</label>
-                        <div class="server-config">
+                    <!-- Target Server Configuration -->
+                    <div class="config-row">
+                        <div class="config-group">
+                            <label for="targetServer">Target Server:</label>
                             <input type="text" id="targetServer" placeholder="Server IP/Hostname" value="127.0.0.1">
+                        </div>
+                        <div class="config-group">
+                            <label for="targetPort">Port:</label>
                             <input type="number" id="targetPort" placeholder="Port" value="5140" min="1" max="65535">
+                        </div>
+                        <div class="config-group">
+                            <label for="protocol">Protocol:</label>
                             <select id="protocol">
                                 <option value="udp">UDP</option>
                                 <option value="tcp">TCP</option>
@@ -189,56 +214,62 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Results Section -->
-            <div class="section result-section">
-                <div class="section-header">
-                    <h2 class="section-title">📊 Results</h2>
-                </div>
-                <div class="section-body">
-                    <div id="statusContainer" class="hidden">
-                        <div id="statusMessage" class="status"></div>
-                    </div>
-
-                    <div id="resultContainer" class="hidden">
-                        <div class="result-box">
-                            <h3>📋 Parsed Data</h3>
-                            <div id="parsedData" class="parsed-data"></div>
+                
+                <!-- Right Column: Results -->
+                <div class="right-column">
+                    <!-- Results Section -->
+                    <div class="section result-section">
+                        <div class="section-header">
+                            <h2 class="section-title">📊 Results</h2>
+                            <button class="collapse-btn" onclick="toggleSection('results')" id="resultsToggle">
+                                <span>▼</span>
+                            </button>
                         </div>
-                    </div>
-
-                    <div id="transmissionInfo" class="hidden">
-                        <div class="result-box">
-                            <h3>📤 Transmission Info</h3>
-                            <div id="transmissionDetails" class="parsed-data"></div>
-                        </div>
-                    </div>
-
-                    <div id="saveExampleSection" class="hidden">
-                        <div class="result-box">
-                            <h3>💾 Save as Example</h3>
-                            <div class="save-example-form">
-                                <input type="text" id="exampleName" placeholder="Example name" required>
-                                <input type="text" id="exampleDescription" placeholder="Description (optional)">
-                                <button class="btn btn-secondary btn-small" onclick="saveCurrentExample()">
-                                    Save Example
-                                </button>
+                        <div class="section-body" id="resultsBody">
+                            <div id="statusContainer" class="hidden">
+                                <div id="statusMessage" class="status"></div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Help Section -->
-                    <div class="result-box" style="margin-top: 20px;">
-                        <h3>💡 Quick Help</h3>
-                        <div style="font-size: 13px; color: #6b7280; line-height: 1.6;">
-                            <p><strong>Keyboard Shortcuts:</strong></p>
-                            <ul style="margin: 8px 0; padding-left: 20px;">
-                                <li><kbd>Ctrl+Enter</kbd> - Send/Generate message</li>
-                                <li><kbd>Ctrl+R</kbd> - Reset results</li>
-                            </ul>
-                            <p><strong>Facility Codes:</strong> 0=kernel, 4=security, 16=local0</p>
-                            <p><strong>Severity Levels:</strong> 0=emergency, 4=warning, 6=info</p>
-                            <p><strong>FortiGate Examples:</strong> Included in example messages</p>
+
+                            <div id="resultContainer" class="hidden">
+                                <div class="result-box">
+                                    <h3>📋 Parsed Data</h3>
+                                    <div id="parsedData" class="parsed-data"></div>
+                                </div>
+                            </div>
+
+                            <div id="transmissionInfo" class="hidden">
+                                <div class="result-box">
+                                    <h3>📤 Transmission Info</h3>
+                                    <div id="transmissionDetails" class="parsed-data"></div>
+                                </div>
+                            </div>
+
+                            <div id="saveExampleSection" class="hidden">
+                                <div class="result-box">
+                                    <h3>💾 Save as Example</h3>
+                                    <div class="save-example-form">
+                                        <input type="text" id="exampleName" placeholder="Example name" required>
+                                        <input type="text" id="exampleDescription" placeholder="Description (optional)">
+                                        <button class="btn btn-secondary btn-small" onclick="saveCurrentExample()">
+                                            Save Example
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Help Section -->
+                            <div class="result-box help-section">
+                                <h3>💡 Quick Help</h3>
+                                <div class="help-content">
+                                    <p><strong>Keyboard Shortcuts:</strong></p>
+                                    <ul>
+                                        <li><kbd>Ctrl+Enter</kbd> - Send/Generate message</li>
+                                        <li><kbd>Ctrl+R</kbd> - Reset results</li>
+                                    </ul>
+                                    <p><strong>Facility Codes:</strong> 0=kernel, 4=security, 16=local0</p>
+                                    <p><strong>Severity Levels:</strong> 0=emergency, 4=warning, 6=info</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

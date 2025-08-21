@@ -39,28 +39,33 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
-    padding: 20px;
+    padding: 10px;
     color: var(--gray-800);
     line-height: 1.6;
+    margin: 0;
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
     background: var(--white);
     border-radius: 20px;
     box-shadow: var(--shadow-xl);
     overflow: hidden;
     backdrop-filter: blur(10px);
+    height: calc(100vh - 20px);
+    display: flex;
+    flex-direction: column;
 }
 
 .header {
     background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-700) 100%);
     color: var(--white);
-    padding: 32px;
+    padding: 20px;
     text-align: center;
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .header::before {
@@ -75,9 +80,9 @@ body {
 }
 
 .header h1 {
-    font-size: 2.5rem;
+    font-size: 1.8rem;
     font-weight: 700;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
     position: relative;
     z-index: 1;
     background: linear-gradient(135deg, #fff 0%, #e2e8f0 100%);
@@ -88,18 +93,43 @@ body {
 
 .header p {
     opacity: 0.9;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 400;
     position: relative;
     z-index: 1;
 }
 
 .main-content {
+    flex: 1;
+    overflow: hidden;
+    background: var(--gray-50);
+}
+
+.grid-layout {
     display: grid;
-    grid-template-columns: 350px 1fr 1fr;
-    gap: 24px;
-    padding: 24px;
-    min-height: 600px;
+    grid-template-columns: 300px 1fr 350px;
+    gap: 16px;
+    padding: 16px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.left-column, .center-column, .right-column {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.left-column {
+    min-width: 300px;
+}
+
+.center-column {
+    min-width: 500px;
+}
+
+.right-column {
+    min-width: 350px;
 }
 
 .section {
@@ -109,6 +139,10 @@ body {
     overflow: hidden;
     box-shadow: var(--shadow);
     transition: all 0.2s ease;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .section:hover {
@@ -136,6 +170,9 @@ body {
     border-bottom: 1px solid var(--gray-200);
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .section-title {
@@ -167,11 +204,28 @@ body {
 }
 
 .section-body {
-    padding: 24px;
+    padding: 16px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+}
+
+.config-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.config-group {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
 }
 
 .form-group:last-child {
@@ -180,23 +234,33 @@ body {
 
 label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     font-weight: 500;
     color: var(--gray-700);
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
+.config-group label {
+    font-size: 0.7rem;
+    margin-bottom: 2px;
+}
+
 input, textarea, select {
     width: 100%;
-    padding: 12px 16px;
+    padding: 8px 12px;
     border: 1px solid var(--gray-300);
     border-radius: var(--border-radius);
-    font-size: 14px;
+    font-size: 12px;
     transition: all 0.2s ease;
     background: var(--white);
     color: var(--gray-800);
+}
+
+.config-group input, .config-group select {
+    padding: 6px 8px;
+    font-size: 11px;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -222,18 +286,18 @@ textarea {
 
 .button-group {
     display: flex;
-    gap: 12px;
-    margin-top: 24px;
+    gap: 8px;
+    margin-top: 16px;
     flex-wrap: wrap;
 }
 
 .btn {
     flex: 1;
-    min-width: 120px;
-    padding: 12px 20px;
+    min-width: 100px;
+    padding: 8px 16px;
     border: none;
     border-radius: var(--border-radius);
-    font-size: 14px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -244,7 +308,7 @@ textarea {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .btn::before {
@@ -392,6 +456,37 @@ textarea {
     background: var(--danger-dark);
 }
 
+.help-section {
+    margin-top: 16px;
+}
+
+.help-content {
+    font-size: 11px;
+    color: var(--gray-600);
+    line-height: 1.5;
+}
+
+.help-content ul {
+    margin: 6px 0;
+    padding-left: 16px;
+}
+
+.help-content li {
+    margin: 2px 0;
+}
+
+.help-content kbd {
+    background: var(--gray-800);
+    color: var(--white);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--gray-600);
+}
+
 .example-messages {
     margin-bottom: 20px;
 }
@@ -408,6 +503,7 @@ textarea {
     transition: all 0.2s ease;
     word-break: break-all;
     line-height: 1.4;
+    position: relative;
 }
 
 .example-item:hover {
@@ -609,20 +705,35 @@ textarea {
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .main-content {
-        grid-template-columns: 320px 1fr 1fr;
-        gap: 20px;
+    .grid-layout {
+        grid-template-columns: 280px 1fr 300px;
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .header h1 {
+        font-size: 1.6rem;
+    }
+    
+    .header p {
+        font-size: 0.8rem;
     }
 }
 
 @media (max-width: 1024px) {
-    .main-content {
+    .grid-layout {
         grid-template-columns: 1fr;
-        gap: 16px;
+        grid-template-rows: auto auto auto;
+        gap: 12px;
     }
     
-    .server-config {
-        grid-template-columns: 1fr;
+    .config-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .config-group {
+        min-width: auto;
     }
     
     .button-group {
@@ -905,4 +1016,44 @@ kbd {
     .section {
         break-inside: avoid;
     }
+}
+
+/* Collapse Button Styles */
+.collapse-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--gray-600);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+}
+
+.collapse-btn:hover {
+    background: var(--gray-100);
+    color: var(--gray-800);
+}
+
+.collapse-btn:active {
+    transform: scale(0.95);
+}
+
+.collapse-btn.collapsed span {
+    transform: rotate(-90deg);
+}
+
+.collapse-btn span {
+    transition: transform 0.2s ease;
+    display: block;
+}
+
+/* Section body collapse animation */
+.section-body.collapsed {
+    display: none;
 }

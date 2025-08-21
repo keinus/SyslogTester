@@ -48,6 +48,33 @@ function setLoading(btnId, loaderId, textId, isLoading) {
     }
 }
 
+function toggleSection(sectionType) {
+    let bodyId, toggleId;
+    
+    if (sectionType === 'messageConfig') {
+        bodyId = 'messageConfigBody';
+        toggleId = 'messageConfigToggle';
+    } else if (sectionType === 'results') {
+        bodyId = 'resultsBody';
+        toggleId = 'resultsToggle';
+    }
+    
+    const sectionBody = document.getElementById(bodyId);
+    const toggleBtn = document.getElementById(toggleId);
+    
+    if (sectionBody && toggleBtn) {
+        const isCollapsed = sectionBody.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            sectionBody.classList.remove('collapsed');
+            toggleBtn.classList.remove('collapsed');
+        } else {
+            sectionBody.classList.add('collapsed');
+            toggleBtn.classList.add('collapsed');
+        }
+    }
+}
+
 // Example management functions
 async function loadExamples() {
     try {
@@ -139,7 +166,6 @@ function updateExamples() {
                 </div>
                 <div class="example-actions">
                     <button onclick="event.stopPropagation(); deleteExample(${example.id})" class="delete-btn" title="Delete example">🗑️</button>
-                    ${example.raw_message.length > 150 ? '<span class="example-tooltip" title="' + example.raw_message + '">🔍</span>' : ''}
                 </div>
             `;
             
