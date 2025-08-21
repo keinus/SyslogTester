@@ -116,8 +116,10 @@ function updateExamples() {
 
 function useExample(rfcVersion, index) {
     const inputMode = document.getElementById('inputMode').value;
+    const exampleMessage = examples[rfcVersion][index];
+    
     if (inputMode === 'raw') {
-        document.getElementById('syslogMessage').value = examples[rfcVersion][index];
+        document.getElementById('syslogMessage').value = exampleMessage;
         document.getElementById('rfcVersion').value = rfcVersion;
         showStatus(`Example ${index + 1} loaded successfully!`);
     } else {
@@ -125,13 +127,29 @@ function useExample(rfcVersion, index) {
         document.getElementById('rfcVersion').value = rfcVersion;
         toggleRfcFields();
         
-        // For simplicity, show raw message option
-        const confirmSwitch = confirm('This example is best used in Raw Message mode. Switch to Raw Message mode?');
-        if (confirmSwitch) {
-            document.getElementById('inputMode').value = 'raw';
-            toggleInputMode();
-            document.getElementById('syslogMessage').value = examples[rfcVersion][index];
-            showStatus(`Example ${index + 1} loaded in Raw Message mode!`);
+        // Extract message part from syslog format
+        const messageContent = extractMessageFromSyslog(exampleMessage, rfcVersion);
+        const messageMode = document.getElementById('messageMode').value;
+        
+        if (messageMode === 'components') {
+            // Parse message into components
+            const components = parseMessageToComponents(messageContent);
+            populateMessageComponents(components);
+            showStatus(`Example ${index + 1} loaded as components!`);
+        } else {
+            // Switch to component mode and ask user
+            const confirmSwitch = confirm('This example contains key=value data. Switch to Key-Value Components mode for better editing?');
+            if (confirmSwitch) {
+                document.getElementById('messageMode').value = 'components';
+                toggleMessageMode();
+                const components = parseMessageToComponents(messageContent);
+                populateMessageComponents(components);
+                showStatus(`Example ${index + 1} loaded in Components mode!`);
+            } else {
+                // Load as simple text
+                document.getElementById('message').value = messageContent;
+                showStatus(`Example ${index + 1} loaded as text!`);
+            }
         }
     }
 }
@@ -405,6 +423,91 @@ function getMessageFromComponents() {
     });
     
     return pairs.join(' ');
+}
+
+// Syslog message extraction functions
+function extractMessageFromSyslog(syslogMessage, rfcVersion) {
+    try {
+        if (rfcVersion === '5424') {
+            // RFC 5424 format: <priority>version timestamp hostname app-name procid msgid structured-data msg
+            // Example: <189>1 2024-08-20T14:30:45.123Z FortiGate-100E fortigate 1001 0000000013 [fortinet@32473 devid="FG100E1234567890"] type=traffic subtype=forward...
+            
+            const rfc5424Pattern = /^<\d+>\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(?:\[.*?\]\s+)?(.*)$/;
+            const match = syslogMessage.match(rfc5424Pattern);
+            if (match) {
+                return match[1].trim();
+            }
+        } else {
+            // RFC 3164 format: <priority>timestamp hostname tag[pid]: message
+            // Example: <189>date=2024-08-20 time=14:30:45 devname=FortiGate-100E...
+            
+            // For FortiGate messages that start with date=, extract everything after priority
+            if (syslogMessage.includes('date=')) {
+                const priorityEndIndex = syslogMessage.indexOf('>') + 1;
+                return syslogMessage.substring(priorityEndIndex).trim();
+            }
+            
+            // Standard RFC 3164 format
+            const rfc3164Pattern = /^<\d+>\w+\s+\d+\s+\d+:\d+:\d+\s+\S+\s+\S+:\s*(.*)$/;
+            const match = syslogMessage.match(rfc3164Pattern);
+            if (match) {
+                return match[1].trim();
+            }
+            
+            // Fallback: extract everything after hostname
+            const fallbackPattern = /^<\d+>.*?\s+\S+\s+(.*)$/;
+            const fallbackMatch = syslogMessage.match(fallbackPattern);
+            if (fallbackMatch) {
+                return fallbackMatch[1].trim();
+            }
+        }
+        
+        // If no pattern matches, return the original message
+        return syslogMessage;
+    } catch (error) {
+        console.error('Error extracting message from syslog:', error);
+        return syslogMessage;
+    }
+}
+
+// Message parsing functions
+function parseMessageToComponents(message) {
+    const components = [];
+    
+    // Check if message contains key=value patterns
+    const keyValuePattern = /(\w+)=([^\s]+)/g;
+    const matches = [...message.matchAll(keyValuePattern)];
+    
+    if (matches.length > 0) {
+        // Extract key=value pairs
+        matches.forEach(match => {
+            const key = match[1];
+            let value = match[2];
+            
+            // Remove quotes if present
+            value = value.replace(/^["']|["']$/g, '');
+            
+            components.push({ key, value });
+        });
+    } else {
+        // If no key=value pairs found, treat as single message
+        components.push({ key: 'message', value: message.trim() });
+    }
+    
+    return components;
+}
+
+function clearMessageComponents() {
+    const container = document.getElementById('messageComponents');
+    container.innerHTML = '';
+}
+
+function populateMessageComponents(components) {
+    clearMessageComponents();
+    
+    components.forEach(component => {
+        addMessageComponent(component.key, component.value);
+    });
 }
 
 // API call functions
