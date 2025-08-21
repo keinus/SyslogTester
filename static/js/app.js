@@ -48,7 +48,6 @@ function hideStatus() {
 function hideResults() {
     document.getElementById('resultContainer').classList.add('hidden');
     document.getElementById('transmissionInfo').classList.add('hidden');
-    document.getElementById('testServerResult').classList.add('hidden');
 }
 
 function setLoading(btnId, loaderId, textId, isLoading) {
@@ -289,35 +288,6 @@ function showGeneratedMessage(generatedMessage) {
     }
 }
 
-function showTestServerResult(result) {
-    const testServerResult = document.getElementById('testServerResult');
-    const testServerDetails = document.getElementById('testServerDetails');
-    
-    if (result.success) {
-        testServerDetails.innerHTML = `
-            <div class="data-item">
-                <div class="data-label">Server Status</div>
-                <div class="data-value">✅ Test server received message</div>
-            </div>
-            <div class="data-item" style="grid-column: 1 / -1;">
-                <div class="data-label">Received Message</div>
-                <div class="data-value code-block">${result.received_message}</div>
-            </div>
-            <div class="data-item">
-                <div class="data-label">From Address</div>
-                <div class="data-value">${result.from_address}</div>
-            </div>
-        `;
-    } else {
-        testServerDetails.innerHTML = `
-            <div class="data-item">
-                <div class="data-label">Server Status</div>
-                <div class="data-value">❌ ${result.error}</div>
-            </div>
-        `;
-    }
-    testServerResult.classList.remove('hidden');
-}
 
 // Component input helper
 function getMessageComponents() {
@@ -576,33 +546,6 @@ async function parseOnly() {
     }
 }
 
-async function startTestServer() {
-    const port = document.getElementById('targetPort').value || 5140;
-    
-    hideResults();
-    hideStatus();
-    setLoading('testBtn', 'testBtnLoader', 'testBtnText', true);
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/test/test-server/${port}`, {
-            method: 'POST'
-        });
-
-        const result = await response.json();
-        showTestServerResult(result);
-        
-        if (result.success) {
-            showStatus('Test server received message successfully!');
-        } else {
-            showStatus(result.error || 'Test server timeout', true);
-        }
-
-    } catch (error) {
-        showStatus(`Test server error: ${error.message}`, true);
-    } finally {
-        setLoading('testBtn', 'testBtnLoader', 'testBtnText', false);
-    }
-}
 
 // Initialize application
 window.addEventListener('DOMContentLoaded', () => {
