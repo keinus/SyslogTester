@@ -8,6 +8,11 @@ let examples = {
     "5424": []
 };
 
+// Transmission control variables
+let transmissionInProgress = false;
+let transmissionCancelled = false;
+let currentTransmissionId = null;
+
 // Utility functions
 function showStatus(message, isError = false) {
     const statusContainer = document.getElementById('statusContainer');
@@ -73,6 +78,44 @@ function toggleSection(sectionType) {
             toggleBtn.classList.add('collapsed');
         }
     }
+}
+
+function toggleUnlimitedMode() {
+    const unlimitedMode = document.getElementById('unlimitedMode');
+    const transmissionCount = document.getElementById('transmissionCount');
+    
+    if (unlimitedMode.checked) {
+        transmissionCount.disabled = true;
+        transmissionCount.value = '';
+        transmissionCount.placeholder = 'Unlimited';
+    } else {
+        transmissionCount.disabled = false;
+        transmissionCount.value = '1';
+        transmissionCount.placeholder = '1';
+    }
+}
+
+function cancelTransmission() {
+    transmissionCancelled = true;
+    if (currentTransmissionId) {
+        clearTimeout(currentTransmissionId);
+        currentTransmissionId = null;
+    }
+    
+    transmissionInProgress = false;
+    
+    // Reset button states
+    document.getElementById('cancelBtn').classList.add('hidden');
+    document.getElementById('generateSendBtn').disabled = false;
+    document.getElementById('generateBtn').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('parseBtn').disabled = false;
+    
+    // Hide loaders
+    setLoading('generateSendBtn', 'generateSendBtnLoader', 'generateSendBtnText', false);
+    setLoading('sendBtn', 'sendBtnLoader', 'sendBtnText', false);
+    
+    showStatus('Transmission cancelled', false);
 }
 
 // Example management functions
@@ -584,6 +627,23 @@ function generateRandomIP() {
            Math.floor(Math.random() * 256);
 }
 
+function regenerateRandomValues() {
+    // Find all components with random checkboxes that are checked
+    const components = document.querySelectorAll('[id^="component_"]');
+    components.forEach(component => {
+        const checkbox = component.querySelector('.random-checkbox');
+        const keyInput = component.querySelector('input[placeholder="Key"]');
+        const valueInput = component.querySelector('input[placeholder="Value"]');
+        
+        if (checkbox && checkbox.checked && keyInput && valueInput) {
+            const key = keyInput.value;
+            if (key) {
+                valueInput.value = generateRandomValue(key);
+            }
+        }
+    });
+}
+
 function toggleRandomValue(componentId) {
     const component = document.getElementById(componentId);
     if (!component) {
@@ -731,10 +791,17 @@ function populateMessageComponents(components) {
 
 // API call functions
 async function generateAndSend() {
-    const components = getMessageComponents();
+    if (transmissionInProgress) {
+        showStatus('Transmission already in progress', true);
+        return;
+    }
+
     const server = document.getElementById('targetServer').value.trim();
     const port = parseInt(document.getElementById('targetPort').value);
     const protocol = document.getElementById('protocol').value;
+    const unlimitedMode = document.getElementById('unlimitedMode').checked;
+    const transmissionCount = unlimitedMode ? Infinity : (parseInt(document.getElementById('transmissionCount').value) || 1);
+    const transmissionDelay = parseInt(document.getElementById('transmissionDelay').value) || 100;
 
     if (!server) {
         showStatus('Please enter target server', true);
@@ -746,51 +813,110 @@ async function generateAndSend() {
         return;
     }
 
+    transmissionInProgress = true;
+    transmissionCancelled = false;
+    
+    // Show cancel button and disable other buttons
+    document.getElementById('cancelBtn').classList.remove('hidden');
+    document.getElementById('generateSendBtn').disabled = true;
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('parseBtn').disabled = true;
+
     hideResults();
     hideStatus();
     setLoading('generateSendBtn', 'generateSendBtnLoader', 'generateSendBtnText', true);
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/syslog/generate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                components: components,
-                target_server: server,
-                target_port: port,
-                protocol: protocol
-            })
-        });
+    let successCount = 0;
+    let errorCount = 0;
+    let currentCount = 0;
+    let lastSuccessData = null;
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    const performTransmission = async () => {
+        if (transmissionCancelled || (!unlimitedMode && currentCount >= transmissionCount)) {
+            // Transmission completed or cancelled
+            transmissionInProgress = false;
+            document.getElementById('cancelBtn').classList.add('hidden');
+            document.getElementById('generateSendBtn').disabled = false;
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('parseBtn').disabled = false;
+            setLoading('generateSendBtn', 'generateSendBtnLoader', 'generateSendBtnText', false);
+            
+            if (!transmissionCancelled) {
+                const totalSent = successCount + errorCount;
+                showStatus(`Transmission completed: ${successCount} successful, ${errorCount} failed (Total: ${totalSent})`);
+                
+                // Show results from the last successful transmission
+                if (lastSuccessData) {
+                    showResults(lastSuccessData);
+                    if (lastSuccessData.generated_message) {
+                        showGeneratedMessage(lastSuccessData.generated_message);
+                        const rfcVersion = document.getElementById('rfcVersion').value;
+                        showSaveExampleSection(lastSuccessData.generated_message, rfcVersion);
+                    }
+                    if (lastSuccessData.sent_to) {
+                        showTransmissionInfo(lastSuccessData.sent_to);
+                    }
+                }
+            }
+            return;
         }
 
-        const data = await response.json();
-        console.log('Response:', data);
+        try {
+            // Regenerate random values for each transmission
+            regenerateRandomValues();
+            const components = getMessageComponents();
+            
+            const response = await fetch(`${API_BASE_URL}/api/syslog/generate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    components: components,
+                    target_server: server,
+                    target_port: port,
+                    protocol: protocol
+                })
+            });
 
-        if (data.success) {
-            showStatus('Message generated and sent successfully!');
-            showResults(data);
-            if (data.generated_message) {
-                showGeneratedMessage(data.generated_message);
-                const rfcVersion = document.getElementById('rfcVersion').value;
-                showSaveExampleSection(data.generated_message, rfcVersion);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-            if (data.sent_to) {
-                showTransmissionInfo(data.sent_to);
+
+            const data = await response.json();
+
+            if (data.success) {
+                successCount++;
+                lastSuccessData = data;
+                if (unlimitedMode) {
+                    showStatus(`Unlimited transmission: ${successCount} sent successfully, ${errorCount} failed`, false);
+                } else {
+                    showStatus(`Transmission ${currentCount + 1}/${transmissionCount}: ${successCount} successful, ${errorCount} failed`, false);
+                }
+            } else {
+                errorCount++;
+                console.error('API error:', data.error);
             }
+        } catch (error) {
+            errorCount++;
+            console.error('Request error:', error);
+        }
+
+        currentCount++;
+        
+        if (!transmissionCancelled && (unlimitedMode || currentCount < transmissionCount)) {
+            // Schedule next transmission
+            currentTransmissionId = setTimeout(performTransmission, transmissionDelay);
         } else {
-            showStatus(data.error || 'Unknown error occurred', true);
+            // Trigger completion
+            setTimeout(performTransmission, 0);
         }
-    } catch (error) {
-        console.error('Request error:', error);
-        showStatus(`Connection error: ${error.message}. Make sure backend is running on ${API_BASE_URL}`, true);
-    } finally {
-        setLoading('generateSendBtn', 'generateSendBtnLoader', 'generateSendBtnText', false);
-    }
+    };
+
+    // Start transmission
+    performTransmission();
 }
 
 async function generateOnly() {
@@ -836,11 +962,19 @@ async function generateOnly() {
 }
 
 async function parseAndSend() {
+    if (transmissionInProgress) {
+        showStatus('Transmission already in progress', true);
+        return;
+    }
+
     const message = document.getElementById('syslogMessage').value.trim();
     const server = document.getElementById('targetServer').value.trim();
     const port = parseInt(document.getElementById('targetPort').value);
     const protocol = document.getElementById('protocol').value;
     const rfcVersion = document.getElementById('rfcVersion').value;
+    const unlimitedMode = document.getElementById('unlimitedMode').checked;
+    const transmissionCount = unlimitedMode ? Infinity : (parseInt(document.getElementById('transmissionCount').value) || 1);
+    const transmissionDelay = parseInt(document.getElementById('transmissionDelay').value) || 100;
 
     if (!message) {
         showStatus('Please enter a syslog message', true);
@@ -857,45 +991,102 @@ async function parseAndSend() {
         return;
     }
 
+    transmissionInProgress = true;
+    transmissionCancelled = false;
+    
+    // Show cancel button and disable other buttons
+    document.getElementById('cancelBtn').classList.remove('hidden');
+    document.getElementById('generateSendBtn').disabled = true;
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('parseBtn').disabled = true;
+
     hideResults();
     hideStatus();
     setLoading('sendBtn', 'sendBtnLoader', 'sendBtnText', true);
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/syslog/parse`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                raw_message: message,
-                target_server: server,
-                target_port: port,
-                protocol: protocol,
-                rfc_version: rfcVersion
-            })
-        });
+    let successCount = 0;
+    let errorCount = 0;
+    let currentCount = 0;
+    let lastSuccessData = null;
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    const performTransmission = async () => {
+        if (transmissionCancelled || (!unlimitedMode && currentCount >= transmissionCount)) {
+            // Transmission completed or cancelled
+            transmissionInProgress = false;
+            document.getElementById('cancelBtn').classList.add('hidden');
+            document.getElementById('generateSendBtn').disabled = false;
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('parseBtn').disabled = false;
+            setLoading('sendBtn', 'sendBtnLoader', 'sendBtnText', false);
+            
+            if (!transmissionCancelled) {
+                const totalSent = successCount + errorCount;
+                showStatus(`Transmission completed: ${successCount} successful, ${errorCount} failed (Total: ${totalSent})`);
+                
+                // Show results from the last successful transmission
+                if (lastSuccessData) {
+                    showResults(lastSuccessData);
+                    if (lastSuccessData.sent_to) {
+                        showTransmissionInfo(lastSuccessData.sent_to);
+                    }
+                }
+            }
+            return;
         }
 
-        const data = await response.json();
-        console.log('Response:', data);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/syslog/parse`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    raw_message: message,
+                    target_server: server,
+                    target_port: port,
+                    protocol: protocol,
+                    rfc_version: rfcVersion
+                })
+            });
 
-        if (data.success) {
-            showStatus('Message parsed and sent successfully!');
-            showResults(data);
-            showTransmissionInfo(data.sent_to);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                successCount++;
+                lastSuccessData = data;
+                if (unlimitedMode) {
+                    showStatus(`Unlimited transmission: ${successCount} sent successfully, ${errorCount} failed`, false);
+                } else {
+                    showStatus(`Transmission ${currentCount + 1}/${transmissionCount}: ${successCount} successful, ${errorCount} failed`, false);
+                }
+            } else {
+                errorCount++;
+                console.error('API error:', data.error);
+            }
+        } catch (error) {
+            errorCount++;
+            console.error('Request error:', error);
+        }
+
+        currentCount++;
+        
+        if (!transmissionCancelled && (unlimitedMode || currentCount < transmissionCount)) {
+            // Schedule next transmission
+            currentTransmissionId = setTimeout(performTransmission, transmissionDelay);
         } else {
-            showStatus(data.error || 'Unknown error occurred', true);
+            // Trigger completion
+            setTimeout(performTransmission, 0);
         }
-    } catch (error) {
-        console.error('Request error:', error);
-        showStatus(`Connection error: ${error.message}. Make sure backend is running on ${API_BASE_URL}`, true);
-    } finally {
-        setLoading('sendBtn', 'sendBtnLoader', 'sendBtnText', false);
-    }
+    };
+
+    // Start transmission
+    performTransmission();
 }
 
 async function parseOnly() {
