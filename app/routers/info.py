@@ -1,11 +1,22 @@
+"""
+RFC 3164/5424 Syslog Parser API 정보 라우터
+
+이 모듈은 RFC 3164 및 RFC 5424 형식의 syslog 메시지를 파싱하고 생성하는
+API 엔드포인트를 제공합니다. Syslog 메시지의 유효성 검사 및 테스트 서버 시작 기능도 포함됩니다.
+"""
+
+from typing import Any
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/api", tags=["info"])
 
 
 @router.get("/")
-async def api_info():
-    """API information."""
+async def api_info() -> dict[str, Any]:
+    """API 정보를 반환  
+    
+    API의 제목, 버전, 설명, 사용 가능한 엔드포인트 목록, 지원하는 RFC 버전, 예제 메시지 등을 포함한 정보를 반환합니다.
+    """
     return {
         "title": "RFC 3164/5424 Syslog Parser API",
         "version": "2.0.0",

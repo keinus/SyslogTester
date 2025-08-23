@@ -1,6 +1,7 @@
 from .syslog import (
     SyslogMessage,
     RFC5424SyslogMessage,
+    RFC3164SyslogMessage,
     MessageComponents,
     SyslogRequest,
     GenerateRequest,
@@ -10,6 +11,7 @@ from .syslog import (
 __all__ = [
     "SyslogMessage",
     "RFC5424SyslogMessage", 
+    "RFC3164SyslogMessage",
     "MessageComponents",
     "SyslogRequest",
     "GenerateRequest",
