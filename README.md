@@ -36,13 +36,6 @@ RFC 3164 및 5424 표준을 완벽 지원하는 현대적이고 포괄적인 시
 - 프로세스 관리 메시지  
 - 애플리케이션 알림
 
-### FortiGate 방화벽 예제
-- **RFC 3164**: 전통적인 FortiGate 시스로그 형식
-- **RFC 5424**: 구조화된 FortiGate 로그 (Enterprise ID 포함)
-- **트래픽 로그**: 네트워크 트래픽 분석
-- **UTM 로그**: 보안 이벤트 로깅 (바이러스, 침입 탐지)
-- **시스템 이벤트**: 인증, 설정 변경
-
 ## 📁 프로젝트 구조
 
 ```
@@ -178,31 +171,8 @@ python run.py
 - `DELETE /api/examples/{example_id}` - 예제 삭제
 
 ### 테스트 및 정보
-- `POST /api/test/test-server/{port}` - 테스트 시스로그 서버 시작
 - `GET /api/` - API 정보 및 엔드포인트
 - `GET /health` - 헬스 체크 엔드포인트
-
-## 💼 사용 사례
-
-### 네트워크 관리자
-- 시스로그 인프라 테스트
-- 로그 파싱 구성 유효성 검사
-- 시스로그 메시지 형식 디버그
-
-### 보안 엔지니어
-- FortiGate 및 기타 방화벽 로그 분석
-- SIEM 통합 테스트
-- 보안 이벤트 형식 유효성 검사
-
-### 개발자
-- 애플리케이션 로깅 테스트
-- 시스로그 구현 디버그
-- RFC 준수성 검증
-
-### DevOps 엔지니어
-- 애플리케이션 상태 모니터링
-- 로그 집계 시스템 테스트
-- 인프라 로깅 유효성 검사
 
 ## 🔒 보안 고려사항
 
@@ -213,14 +183,6 @@ python run.py
 - 프로덕션 환경에서 HTTPS 사용
 - 모든 사용자 입력 검증 및 정리
 - 적절한 네트워크 보안 구성
-
-## 🤝 기여하기
-
-1. 저장소 포크
-2. 기능 브랜치 생성 (`git checkout -b feature/amazing-feature`)
-3. 변경사항 커밋 (`git commit -m 'Add amazing feature'`)
-4. 브랜치에 푸시 (`git push origin feature/amazing-feature`)
-5. Pull Request 생성
 
 ## 📋 개발 가이드
 
@@ -242,17 +204,6 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 이 프로젝트는 MIT 라이선스 하에 라이선스됩니다. 자세한 내용은 LICENSE 파일을 참조하세요.
 
-## 🙏 감사의 말
-
-- **RFC 3164**: The BSD Syslog Protocol
-- **RFC 5424**: The Syslog Protocol  
-- **FastAPI**: 현대적이고 빠른 웹 프레임워크
-- **FortiGate**: 테스트용 시스로그 형식 예제 제공
-
-## 📞 지원
-
-이슈, 질문 또는 기여를 위해서는 GitHub 이슈 트래커를 사용해 주세요.
-
 ## 🔄 업데이트 히스토리
 
 ### v1.0.0 (2025-01-21)
@@ -262,7 +213,3 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 - 사용자 정의 예제 관리
 - 접이식 UI 및 랜덤 값 생성
 - 포괄적 오류 처리 및 상태 관리
-
----
-
-**FastAPI, 현대적 CSS, 그리고 순수 JavaScript로 구축되었습니다** 🚀
