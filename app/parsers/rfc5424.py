@@ -22,7 +22,7 @@ class RFC5424Parser:
         r'(\S+)\s+'  # App-Name
         r'(\S+)\s+'  # ProcID
         r'(\S+)\s+'  # MsgID
-        r'(\S+)\s*'  # Structured-Data
+        r'(-|\[.*?\](?:\[.*?\])*)\s*'  # Structured-Data (can be "-" or one/more [SD elements])
         r'(.*)$'     # Message
     )
     """RFC 5424 형식을 위한 정규 표현식 패턴"""
