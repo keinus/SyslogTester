@@ -19,29 +19,7 @@
 
         <div class="main-content">
             <div class="grid-layout">
-                <!-- Left Column: Examples -->
-                <div class="left-column">
-                    <div class="section example-section">
-                        <div class="section-header">
-                            <h2 class="section-title">📋 Example Messages</h2>
-                        </div>
-                        <div class="section-body">
-                            <div class="form-group">
-                                <label for="exampleRfcVersion">RFC Version:</label>
-                                <select id="exampleRfcVersion" onchange="updateExamples()">
-                                    <option value="3164">RFC 3164</option>
-                                    <option value="5424">RFC 5424</option>
-                                </select>
-                            </div>
-                            
-                            <div id="exampleMessages" class="example-messages">
-                                <!-- Examples will be populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Center Column: Configuration -->
+                <!-- Left Column: Configuration -->
                 <div class="center-column">
                     <!-- Message Configuration Section -->
                     <div class="section input-section">
@@ -233,8 +211,9 @@
                     </div>
                 </div>
             </div>
+                </div>
                 
-                <!-- Right Column: Results -->
+                <!-- Center Column: Results -->
                 <div class="right-column">
                     <!-- Results Section -->
                     <div class="section result-section">
@@ -288,6 +267,28 @@
                                     <p><strong>Facility Codes:</strong> 0=kernel, 4=security, 16=local0</p>
                                     <p><strong>Severity Levels:</strong> 0=emergency, 4=warning, 6=info</p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Examples -->
+                <div class="left-column">
+                    <div class="section example-section">
+                        <div class="section-header">
+                            <h2 class="section-title">📋 Example Messages</h2>
+                        </div>
+                        <div class="section-body">
+                            <div class="form-group">
+                                <label for="exampleRfcVersion">RFC Version:</label>
+                                <select id="exampleRfcVersion" onchange="updateExamples()">
+                                    <option value="3164">RFC 3164</option>
+                                    <option value="5424">RFC 5424</option>
+                                </select>
+                            </div>
+                            
+                            <div id="exampleMessages" class="example-messages">
+                                <!-- Examples will be populated by JavaScript -->
                             </div>
                         </div>
                     </div>

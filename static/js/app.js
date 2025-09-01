@@ -290,13 +290,29 @@ function toggleMessageMode() {
     const componentSection = document.getElementById('componentMessageSection');
     
     if (messageMode === 'components') {
+        // Switching to components mode: parse text content
+        const messageText = document.getElementById('message').value.trim();
+        if (messageText) {
+            const components = parseMessageToComponents(messageText);
+            clearMessageComponents();
+            populateMessageComponents(components);
+        }
+        
         textSection.classList.add('hidden');
         componentSection.classList.remove('hidden');
-        // Add initial component if none exist
+        
+        // Add initial component if none exist after parsing
         if (document.getElementById('messageComponents').children.length === 0) {
             addMessageComponent();
         }
     } else {
+        // Switching to text mode: combine components into text
+        const componentPairs = getMessageComponentPairs();
+        if (componentPairs.length > 0) {
+            const messageText = componentPairs.map(comp => `${comp.key}=${comp.value}`).join(' ');
+            document.getElementById('message').value = messageText;
+        }
+        
         textSection.classList.remove('hidden');
         componentSection.classList.add('hidden');
     }
@@ -702,6 +718,22 @@ function getMessageFromComponents() {
     });
     
     return pairs.join(' ');
+}
+
+function getMessageComponentPairs() {
+    const components = document.querySelectorAll('.message-component');
+    const pairs = [];
+    
+    components.forEach(component => {
+        const key = component.querySelector('.component-key').value.trim();
+        const value = component.querySelector('.component-value').value.trim();
+        
+        if (key && value) {
+            pairs.push({ key, value });
+        }
+    });
+    
+    return pairs;
 }
 
 // Syslog message extraction functions

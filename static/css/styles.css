@@ -107,7 +107,7 @@ body {
 
 .grid-layout {
     display: grid;
-    grid-template-columns: 300px 1fr 350px;
+    grid-template-columns: 1fr 350px 300px;
     gap: 16px;
     padding: 16px;
     height: 100%;
@@ -716,7 +716,7 @@ textarea {
 /* Responsive Design */
 @media (max-width: 1200px) {
     .grid-layout {
-        grid-template-columns: 280px 1fr 300px;
+        grid-template-columns: 1fr 300px 280px;
         gap: 12px;
         padding: 12px;
     }
