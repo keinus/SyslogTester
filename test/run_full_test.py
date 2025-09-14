@@ -8,7 +8,7 @@ import time
 import threading
 import signal
 import sys
-from debug_syslog_server import DebugSyslogServer
+from test.debug_syslog_server import DebugSyslogServer
 from test_syslog import SyslogTester
 
 

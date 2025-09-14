@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  syslog-tester:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    volumes:
+      # Persist database
+      - syslog-data:/app/data
+      # Mount static files for development
+      - ./static:/app/static
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8001
+      - DEBUG=false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - syslog-network
+
+  # Simple syslog server for testing (using netcat)
+  syslog-server:
+    image: alpine:latest
+    command: >
+      sh -c "apk add --no-cache socat &&
+             echo 'Starting syslog test server on port 5140...' &&
+             socat -u UDP-LISTEN:5140,fork STDOUT"
+    ports:
+      - "5140:5140/udp"
+    networks:
+      - syslog-network
+    profiles:
+      - debug
+
+networks:
+  syslog-network:
+    driver: bridge
+
+volumes:
+  syslog-data:
+    driver: local

@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+.mypy_cache/
+.pytest_cache/
+*.db
+test_results.json
+received_messages.json
+ui_test_results.json
+examples.db
+
+# Development
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Documentation
+README.md
+TEST_TOOLS_README.md
+LICENSE
+
+# Test files
+test_syslog.py
+run_full_test.py
+ui_test_tool.py
+debug_syslog_server.py
+
+# UV lock file (optional)
+uv.lock
